@@ -31,7 +31,7 @@ func print(desc string, slice []int) {
 	}
 
 	fmt.Printf(
-		"%11s | %21p | %3d | %3d | %v \r",
+		"%11s | %21p | %3d | %3d | %v \n",
 		desc,
 		pointer,
 		len(slice),
