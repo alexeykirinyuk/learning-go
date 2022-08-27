@@ -27,4 +27,6 @@ func main() {
 	fmt.Println(i.IsNegative())
 	i.Set(-1)
 	fmt.Println(i.IsNegative())
+
+	fmt.Println()
 }
