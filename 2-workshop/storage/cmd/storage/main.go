@@ -2,13 +2,17 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/alexeykirinyuk/learning-go/2-workshop/storage/internal/storage"
 )
 
 func main() {
-	fmt.Println("hello world")
-
 	st := storage.NewStorage()
-	fmt.Println(st)
+	file, err := st.Upload("main.txt", []byte("hello"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("it's uploaded", file)
 }
