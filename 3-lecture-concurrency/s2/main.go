@@ -11,7 +11,8 @@ func main() {
 		"касса_1": 0,
 		"касса_2": 0,
 	}
-	mu := &sync.Mutex{}
+	mu := &sync.RWMutex{}
+	mu.RLock()
 
 	for i := 0; i < 1000; i++ {
 		go func(i int) {
