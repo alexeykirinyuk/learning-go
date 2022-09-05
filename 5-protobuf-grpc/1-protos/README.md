@@ -1,16 +1,43 @@
 # Protocol buffers - `GRPC`
 
-## Главные недостатки `JSON`
+- [Protocol buffers - `GRPC`](#protocol-buffers---grpc)
+  - [JSON vs Procol Buffers](#json-vs-procol-buffers)
+    - [Главные недостатки `JSON`](#главные-недостатки-json)
+    - [Что такое `Protocol Buffers`](#что-такое-protocol-buffers)
+  - [Типы данных](#типы-данных)
+    - [Типы данных - скалярые](#типы-данных---скалярые)
+    - [Сообщение может быть полем](#сообщение-может-быть-полем)
+    - [Типы данных - `repeated`](#типы-данных---repeated)
+    - [Типы данных - `map`](#типы-данных---map)
+    - [Типы данных - `enum`](#типы-данных---enum)
+    - [Типы данных - `oneof`](#типы-данных---oneof)
+    - [Вложенность](#вложенность)
+  - [В `protobuf` невозможно отличить значение по умолчанию от отсутствия поля](#в-protobuf-невозможно-отличить-значение-по-умолчанию-от-отсутствия-поля)
+    - [wrappers](#wrappers)
+    - [timestamp](#timestamp)
+    - [Как хранятся сообщения](#как-хранятся-сообщения)
+      - [Типы](#типы)
+      - [Varint](#varint)
+      - [Repeated](#repeated)
+      - [Строки](#строки)
+    - [Обратная совместимость](#обратная-совместимость)
+      - [Взаимозаменяемые типы](#взаимозаменяемые-типы)
+    - [Философия](#философия)
+
+## JSON vs Procol Buffers
+### Главные недостатки `JSON`
 - большой размер данных
 - медленный парсинг
 
-## Что такое `Protocol Buffers`
+### Что такое `Protocol Buffers`
 - (эффективный) бинарный формат
 - для (де)кодирования нужно знать схему
 - парсеры/сериалазторы генерируются **для многих языков**
 - фокус на обратную совместимость
 
-## Типы данных - скалярые
+## Типы данных
+
+### Типы данных - скалярые
 ```protobuf
 message TestMessage {
     bool some_value = 1;
@@ -23,7 +50,7 @@ message TestMessage {
 
 Все типы - [документация по scalar-ным типам](https://developers.google.com/protocol-buffers/docs/proto3#scalar) 
 
-## Сообщение может быть полем
+### Сообщение может быть полем
 ```protobuf
 message InnerMessage {
     string name = 1;
@@ -34,7 +61,7 @@ message Message {
 }
 ```
 
-## Типы данных - `repeated`
+### Типы данных - `repeated`
 ```protobuf
 message Comment {
     string text = 1;
@@ -46,7 +73,7 @@ message TestMessage {
 }
 ```
 
-## Типы данных - `map`
+### Типы данных - `map`
 - ключ - любой скалярный тип, кроме bytes и чисел с плавающей точкой
 
 ```protobuf
@@ -59,7 +86,7 @@ message MessageWithMap {
 }
 ```
 
-## Типы данных - `enum`
+### Типы данных - `enum`
 ```protobuf
 enum Status {
     UNKNOWN = 1;
@@ -72,7 +99,7 @@ message Message {
 }
 ```
 
-## Типы данных - `oneof`
+### Типы данных - `oneof`
 ```protobuf
 message NumericValue {
     string name = 1;
@@ -88,7 +115,7 @@ message FormattedFloat {
 }
 ```
 
-## Вложенность
+### Вложенность
 ```protobuf
 message NestedDemo {
     message NestedMessage {
@@ -104,9 +131,9 @@ message NestedDemo {
 }
 ```
 
-# В `protobuf` невозможно отличить значение по умолчанию от отсутствия поля
+## В `protobuf` невозможно отличить значение по умолчанию от отсутствия поля
 
-## wrappers
+### wrappers
 ```protobuf
 import "google/protobuf/wrappers.proto";
 
@@ -120,7 +147,7 @@ message ParamValue {
 }
 ```
 
-## timestamp
+### timestamp
 ```protobuf
 import "google/protobuf/timestamp.proto";
 
@@ -131,10 +158,10 @@ message Message {
 }
 ```
 
-## Как хранятся сообщения
+### Как хранятся сообщения
 ![img-how-store-messages](./md/buf_store.png)
 
-### Типы
+#### Типы
 | Type | Meaning          | Used For                                                                 |
 | ---- | ---------------- | ------------------------------------------------------------------------ |
 | 0    | Varint           | `int32`, `int64`, `uint32`, `uint64`, `sint32`, `sint64`, `bool`, `enum` |
@@ -144,7 +171,7 @@ message Message {
 | 4    | End group        | groups (deprecated)                                                      |
 | 5    | 32-bit           | `fixed32`, `sfixed32`, `float`                                           |
 
-### Varint
+#### Varint
 Varint делить число на 7 бит.  
 Если в 7 бит не влезает - в старший разряд пишется 1 и в следующие 7 бит пишется число.  
 Как только встречает 0 - заканчивает чтение.  
@@ -154,14 +181,14 @@ Varint делить число на 7 бит.
 - `field tag` + `type` - тоже varint
 - `length` (напр строки) - тоже varint
 
-### Repeated
+#### Repeated
 Просто перечисление (один индекс - разные значения). Нет разницы между массивом из одного элемента и non-repeated field-ом.
 
-### Строки
+#### Строки
 Кодировка - `utf-8`
 
 
-## Обратная совместимость
+### Обратная совместимость
 - нельзя менять номер существующего поля
 - можно добавлять/удалять поля
 - нельзя добавлять новое поле на место старого номера! (reserved)
@@ -182,7 +209,7 @@ message SearchRequest {
 }
 ```
 
-### Взаимозаменяемые типы
+#### Взаимозаменяемые типы
 - типы `int32`, `uint32`, `int64`, `uint64` и `bool` - взаимозаменяемые (преобразования по правилам `C++`). Так как `Varint`
 - `string` и `bytes` взаимозаменяемые (если передается валидная строка)
 - сообщение можно заменить на `bytes` с сериализованным предствалением
@@ -191,5 +218,5 @@ message SearchRequest {
 - `int32`, `uint32`, `int64`, `uint64` взаимозаменяемые с enum
 - можно превратить поле/ряд полей в `oneof`
 
-## Философия
+### Философия
 Любое поле является опциональным
