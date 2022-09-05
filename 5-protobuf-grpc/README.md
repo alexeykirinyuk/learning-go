@@ -1,10 +1,10 @@
-# Protocol buffers - GRPC
+# Protocol buffers - `GRPC`
 
-## Главные недостатки JSON
+## Главные недостатки `JSON`
 - большой размер данных
 - медленный парсинг
 
-## Что такое Protocol Buffers
+## Что такое `Protocol Buffers`
 - (эффективный) бинарный формат
 - для (де)кодирования нужно знать схему
 - парсеры/сериалазторы генерируются **для многих языков**
@@ -34,7 +34,7 @@ message Message {
 }
 ```
 
-## Типы данных - repeated
+## Типы данных - `repeated`
 ```protobuf
 message Comment {
     string text = 1;
@@ -46,7 +46,7 @@ message TestMessage {
 }
 ```
 
-## Типы данных - map
+## Типы данных - `map`
 - ключ - любой скалярный тип, кроме bytes и чисел с плавающей точкой
 
 ```protobuf
@@ -59,7 +59,7 @@ message MessageWithMap {
 }
 ```
 
-## Типы данных - enum
+## Типы данных - `enum`
 ```protobuf
 enum Status {
     UNKNOWN = 1;
@@ -72,7 +72,7 @@ message Message {
 }
 ```
 
-## Типы данных - oneof
+## Типы данных - `oneof`
 ```protobuf
 message NumericValue {
     string name = 1;
@@ -104,7 +104,7 @@ message NestedDemo {
 }
 ```
 
-# В protobuf невозможно отличить значение по умолчанию от отсутствия поля
+# В `protobuf` невозможно отличить значение по умолчанию от отсутствия поля
 
 ## wrappers
 ```protobuf
@@ -135,11 +135,61 @@ message Message {
 ![img-how-store-messages](./md/buf_store.png)
 
 ### Типы
-| Type | Meaning          | Used For                                                 |
-| ---- | ---------------- | -------------------------------------------------------- |
-| 0    | Variant          | int32, int64, uint32, uint64, sint32, sint64, bool, enum |
-| 1    | 64-bit           | fixed64, sfixed64, double                                |
-| 2    | Length-delimited | string, bytes, embedded messages, packed repeated feilds |
-| 3    | Start group      | groups (deprecated)                                      |
-| 4    | End group        | groups (deprecated)                                      |
-| 5    | 32-bit           | fixed-32, sfixed32, float                                |
+| Type | Meaning          | Used For                                                                 |
+| ---- | ---------------- | ------------------------------------------------------------------------ |
+| 0    | Varint           | `int32`, `int64`, `uint32`, `uint64`, `sint32`, `sint64`, `bool`, `enum` |
+| 1    | 64-bit           | `fixed64`, `sfixed64`, `double`                                          |
+| 2    | Length-delimited | `string`, `bytes`, `embedded messages`, `packed repeated feilds`         |
+| 3    | Start group      | groups (deprecated)                                                      |
+| 4    | End group        | groups (deprecated)                                                      |
+| 5    | 32-bit           | `fixed32`, `sfixed32`, `float`                                           |
+
+### Varint
+Varint делить число на 7 бит.  
+Если в 7 бит не влезает - в старший разряд пишется 1 и в следующие 7 бит пишется число.  
+Как только встречает 0 - заканчивает чтение.  
+
+Экономит байты для длинных чисел (напр int64).  
+
+- `field tag` + `type` - тоже varint
+- `length` (напр строки) - тоже varint
+
+### Repeated
+Просто перечисление (один индекс - разные значения). Нет разницы между массивом из одного элемента и non-repeated field-ом.
+
+### Строки
+Кодировка - `utf-8`
+
+
+## Обратная совместимость
+- нельзя менять номер существующего поля
+- можно добавлять/удалять поля
+- нельзя добавлять новое поле на место старого номера! (reserved)
+
+```protobuf
+syntax = "proto3";
+
+message SearchRequest {
+    string query = 1;
+    int32 page_numer = 2;
+    int32 result_per_page = 3;
+}
+
+message SearchRequest {
+    string query = 1;
+    int32 page_numer = 2;
+    reserved 3; // помечаем поле как reserved для будущего добавления полей
+}
+```
+
+### Взаимозаменяемые типы
+- типы `int32`, `uint32`, `int64`, `uint64` и `bool` - взаимозаменяемые (преобразования по правилам `C++`). Так как `Varint`
+- `string` и `bytes` взаимозаменяемые (если передается валидная строка)
+- сообщение можно заменить на `bytes` с сериализованным предствалением
+- repeated может добавить/убрать у `bytes`, `string` и сообщений
+- если убрать repeated - клиент увидет только последнее сообщение
+- `int32`, `uint32`, `int64`, `uint64` взаимозаменяемые с enum
+- можно превратить поле/ряд полей в `oneof`
+
+## Философия
+Любое поле является опциональным
