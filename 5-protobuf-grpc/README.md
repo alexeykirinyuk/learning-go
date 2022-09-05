@@ -103,3 +103,43 @@ message NestedDemo {
     NestedMessage.NestedEnum result = 1;
 }
 ```
+
+# В protobuf невозможно отличить значение по умолчанию от отсутствия поля
+
+## wrappers
+```protobuf
+import "google/protobuf/wrappers.proto";
+
+message ParamValue {
+    oneof value_oneof {
+        google.protobuf.StringValue str = 1;
+        google.protobuf.DoubleValue double = 2;
+        google.protobuf.Int64Value int = 3;
+        google.protobuf.BoolValue bool = 4;
+    }
+}
+```
+
+## timestamp
+```protobuf
+import "google/protobuf/timestamp.proto";
+
+message Message {
+    string text = 1;
+    google.protobuf.Timestmap created_at = 1;
+    google.protobuf.Timestmap updated_at = 1;
+}
+```
+
+## Как хранятся сообщения
+![img-how-store-messages](./md/buf_store.png)
+
+### Типы
+| Type | Meaning          | Used For                                                 |
+| ---- | ---------------- | -------------------------------------------------------- |
+| 0    | Variant          | int32, int64, uint32, uint64, sint32, sint64, bool, enum |
+| 1    | 64-bit           | fixed64, sfixed64, double                                |
+| 2    | Length-delimited | string, bytes, embedded messages, packed repeated feilds |
+| 3    | Start group      | groups (deprecated)                                      |
+| 4    | End group        | groups (deprecated)                                      |
+| 5    | 32-bit           | fixed-32, sfixed32, float                                |
