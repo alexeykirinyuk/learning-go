@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package golang.school.demo;
+
+option go_package = "github.com/alexeykirinyuk/learning-go/protos-1";
+
+message ParamValue {
+    oneof value_oneof {
+        double double = 1;
+        int64 int = 2;
+        bool bool = 3;
+        string string = 4;
+    }
+}
+
+message SellerParams {
+    message Item {
+        int64 seller_id = 1;
+        double rating = 2;
+        map<string, ParamValue> params = 3;
+    }
+
+    repeated Item result = 1;
+}
