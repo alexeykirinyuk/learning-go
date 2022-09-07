@@ -1,0 +1,10 @@
+version: v1beta1
+plugins:
+  - name: go
+    out: pkg
+    opt:
+      - module=github.com/alexeykirinyuk/learning-go/5-protobuf-grpc/2-grpc
+  - name: go-grpc
+    out: pkg
+    opt:
+      - module=github.com/alexeykirinyuk/learning-go/5-protobuf-grpc/2-grpc

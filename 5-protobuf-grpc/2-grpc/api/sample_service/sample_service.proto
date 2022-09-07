@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package alexeykirinyuk.learning_go.protobuf_grpc.grpc2.sample_service;
+
+option go_package = "github.com/alexeykirinyuk/learning-go/5-protobuf-grpc/2-grpc/sample_service;sample_service";
+
+service SampleService {
+    rpc SampleMethod1 (SampleMethod1Request) returns (SampleMethod1Response);
+}
+
+message SampleMethod1Request {
+    uint64 id = 1;
+}
+
+message SampleMethod1Response {
+    Template value = 1;
+}
+
+message Template {
+    uint64 id = 1;
+    string name = 2;
+}
