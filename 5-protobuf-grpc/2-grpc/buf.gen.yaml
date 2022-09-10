@@ -1,10 +1,28 @@
-version: v1beta1
+version: v1
 plugins:
   - name: go
-    out: pkg
+    out: pkg/sample_service
     opt:
-      - module=github.com/alexeykirinyuk/learning-go/5-protobuf-grpc/2-grpc
+      - paths=import
   - name: go-grpc
-    out: pkg
+    out: pkg/sample_service
     opt:
-      - module=github.com/alexeykirinyuk/learning-go/5-protobuf-grpc/2-grpc
+      - paths=import
+# installation - go install github.com/envoyproxy/protoc-gen-validate
+  - name: validate
+    out: pkg/sample_service
+    opt:
+      - lang=go
+    strategy: directory
+  - name: grpc-gateway
+    out: pkg/sample_service
+    opt:
+      - logtostderr=true
+      - paths=import
+    strategy: directory
+  - name: openapiv2
+    path: protoc-gen-openapiv2
+    out: swagger
+    opt:
+      - generate_unbound_methods=true
+    strategy: directory

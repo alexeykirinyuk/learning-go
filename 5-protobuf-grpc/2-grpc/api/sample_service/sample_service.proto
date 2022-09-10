@@ -2,14 +2,21 @@ syntax = "proto3";
 
 package alexeykirinyuk.learning_go.protobuf_grpc.grpc2.sample_service;
 
+import "google/api/annotations.proto";
+import "validate/validate.proto";
+
 option go_package = "github.com/alexeykirinyuk/learning-go/5-protobuf-grpc/2-grpc/sample_service;sample_service";
 
 service SampleService {
-    rpc SampleMethod1 (SampleMethod1Request) returns (SampleMethod1Response);
+    rpc SampleMethod1 (SampleMethod1Request) returns (SampleMethod1Response) {
+        option (google.api.http) = {
+            get: "/v1/sample"
+        };
+    }
 }
 
 message SampleMethod1Request {
-    uint64 id = 1;
+    uint64 id = 1 [(validate.rules).uint64.gt = 0];
 }
 
 message SampleMethod1Response {

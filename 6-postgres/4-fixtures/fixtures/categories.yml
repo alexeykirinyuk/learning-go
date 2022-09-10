@@ -1,0 +1,13 @@
+# categories.yml
+- id: 1
+  name: "Food"
+  created_at: "2022-01-01T00:00:00"
+- id: 2
+  name: "Laptops"
+  created_at: "2022-01-01T00:00:00"
+- id: 3
+  name: "Phones"
+  created_at: "2022-01-01T00:00:00"
+- id: 4
+  name: "Home"
+  created_at: "2022-01-01T00:00:00"

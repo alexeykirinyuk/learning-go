@@ -1,23 +1,14 @@
 package main
 
 import (
-	"log"
-	"net"
-
-	"github.com/alexeykirinyuk/learning-go/5-protobuf-grpc/2-grpc/internal/app/sample_service"
-	desc "github.com/alexeykirinyuk/learning-go/5-protobuf-grpc/2-grpc/pkg/sample_service"
-	"google.golang.org/grpc"
+	"github.com/alexeykirinyuk/learning-go/5-protobuf-grpc/2-grpc/internal/server"
 )
 
 func main() {
-	listener, err := net.Listen("tcp", ":5002")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	opts := []grpc.ServerOption{}
-	grpcServer := grpc.NewServer(opts...)
-
-	desc.RegisterSampleServiceServer(grpcServer, &sample_service.Service{})
-	grpcServer.Serve(listener)
+	s := server.NewServer(server.Cfg{
+		Host:     "127.0.0.1",
+		GrpcPort: "5002",
+		HttpPort: "5005",
+	})
+	s.Run()
 }

@@ -25,3 +25,21 @@ func (i *Implementation) CreateEntity(
 }
 ```
 
+## gRPC - возможные варианты
+```protobuf
+service HelloService {
+    rpc SayHello (HelloRequest) returns (HelloResponse);
+
+    rpc LotsOfReplies (HelloRequest) returns (stream HelloRequest);
+
+    rpc LotsOfGreetings (stream HelloRequest) returns (HelloResponse);
+
+    rpc BidiHello (stream HelloRequest) returns (stream HelloResponse)
+}
+```
+
+# grpc-gateway
+- Генерирует http ручки для grpc методов
+- Генерирует swagger
+
+![grpc-gateway](./md/grpc-gateway.png)
