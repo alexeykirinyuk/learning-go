@@ -1,28 +1,36 @@
 # PostgreSQL
 
 <!-- TOC -->
-* [PostgreSQL](#postgresql)
-  * [Содеражние](#)
-  * [PostgreSQL](#postgresql)
-  * [Индексы](#)
-    * [Примеры создания индексов](#--)
-    * [Создание иднекса без блокировки записи в таблицу (postgres@>=8.2)](#--------postgres--82-)
-    * [Hash Index](#hash-index)
-  * [Транзакционность](#)
-    * [Уровни изоляции](#-)
-      * [Аномалии](#)
-      * [Уровни](#)
-  * [Драйверы в GO для подключения к SQL](#--go----sql)
-    * [lib/pq](#libpq)
-    * [go-pg/pg](#go-pgpg)
-    * [pgx - PostgreSQL Driver and Toolkit](#pgx---postgresql-driver-and-toolkit)
-  * [Подключение к Postgres](#--postgres)
-    * [pgx - GO](#pgx---go)
-  * [Пул соединений](#-)
-    * [Настроки пула:](#--)
-  * [Миграции](#)
-  * [Фикстуры](#)
-  * [Выполнение запросов](#-)
+- [PostgreSQL](#postgresql)
+  - [Содеражние](#содеражние)
+  - [PostgreSQL](#postgresql-1)
+  - [Индексы](#индексы)
+    - [Примеры создания индексов](#примеры-создания-индексов)
+    - [Создание иднекса без блокировки записи в таблицу (postgres@>=8.2)](#создание-иднекса-без-блокировки-записи-в-таблицу-postgres82)
+    - [Hash Index](#hash-index)
+  - [Транзакционность](#транзакционность)
+    - [Уровни изоляции](#уровни-изоляции)
+      - [Аномалии](#аномалии)
+      - [Уровни](#уровни)
+  - [Драйверы в GO для подключения к SQL](#драйверы-в-go-для-подключения-к-sql)
+    - [lib/pq](#libpq)
+    - [go-pg/pg](#go-pgpg)
+    - [pgx - PostgreSQL Driver and Toolkit](#pgx---postgresql-driver-and-toolkit)
+  - [Подключение к Postgres](#подключение-к-postgres)
+    - [pgx - GO](#pgx---go)
+  - [Пул соединений](#пул-соединений)
+    - [Настроки пула:](#настроки-пула)
+  - [Миграции](#миграции)
+  - [Фикстуры](#фикстуры)
+  - [Выполнение запросов](#выполнение-запросов)
+    - [Объект `sql.Rows`](#объект-sqlrows)
+    - [Prepared Statements](#prepared-statements)
+    - [Работа с соединениями](#работа-с-соединениями)
+    - [Транзакции](#транзакции)
+    - [NULL](#null)
+    - [SQL Injection](#sql-injection)
+    - [Плейсхолдеры](#плейсхолдеры)
+  - [Проблемы database/sql](#проблемы-databasesql)
 <!-- TOC -->
 
 ## Содеражние
@@ -340,10 +348,35 @@ if age.Valid {
 ### SQL Injection
 Опасно:
 ```go
-query := "select * from users where name = " + name + "'"
+query := "select * from users where name = '" + name + "'"
 query := fmt.Sprintf("select * from users where name = '%s'", name)
 ```
 Потому что в name может оказаться что-то вроде:
-```
+```postgresql
 "jack'; truncate users; select 'pawned"
 ```
+Итого
+```postgresql
+select * from users where name = 'jack'; truncate users; select 'pawned'
+```
+
+### Плейсхолдеры
+Правильный подход - использовать placeholders для подстановки значений в SQL:
+```go
+row := db.QueryRowContext(ctx, "select * from users where name = $1;", name)
+```
+Однако, это не всегда возможно, это работать не будет:
+```go
+row1 := db.QueryRowContext(ctx, "select * from $1 where name = $2", table, name)
+row2 := db.QueryRowContext(ctx, "select * from users order by $1 limit 3", column)
+```
+
+Проверить код на инъекции (и другие проблемы безопасности):
+[securego/gosec](https://github.com/securego/gosec)
+
+## Проблемы database/sql
+- placeholder зависит от базы: $1 в Postgres, ? в MySQL и :name в Oracle
+- есть только базовые типы, но нет например `sql.NullDate`
+- `rows.Scan(arg1, arg2, arg3)` неудобен - легко ошибиться
+- нет возможности `rows.StructScan(&event)`
+
