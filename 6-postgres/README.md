@@ -380,3 +380,181 @@ row2 := db.QueryRowContext(ctx, "select * from users order by $1 limit 3", colum
 - `rows.Scan(arg1, arg2, arg3)` неудобен - легко ошибиться
 - нет возможности `rows.StructScan(&event)`
 
+## Расширение sqlx
+```shell
+go get github.com/jmoiron/sqlx
+```
+`jmoiron/sqlx` - обертка, прозрачно расширяющая стандартную библиотеку database/sql:
+- `sqlx.DB` - обертка над `*sql.DB`
+- `sqlx.Tx` - обертка над `*sql.Tx`
+- `sqlx.Stmt` - обертка над `*sqlx.Stmt`
+- `sqlx.NamedStmt` - PreparedStatement с поддержкой именованных параметров
+
+Подключение:
+```go
+import "github.com/jmoiron/sqlx"
+// ...
+db, err := sqlx.Open("pgx", dsn) // *sqlx.DB
+rows, err := db.QueryContext(ctx, "select * from events") // *sqlx.Rows
+```
+
+### sqlx: именованный placeholder-ы
+Можно передавать параметры в запросы в виде словаря:
+```go
+sql := "select * from events where owner = :owner and start_date = :start"
+rows, err := db.NamedQueryContext(ctx, sql, map[string]interface{} {
+	"owner": 42,
+	"start": "2022-09-11"
+})
+```
+Или структуры:
+```go
+type QueryArgs struct {
+	Owner int64
+	Start string
+}
+sql := "select * from events where owner = :owner and start_date = :start"
+rows, err := db.NamedQueryContext(ctx, sql, QueryArgs{
+	Owner: 42,
+	Start: "2022-09-11"
+})
+```
+
+### sqlx: Сканирование
+Можно сканировать результаты в словарь:
+```go
+sql := "select * from events where start_date > $1"
+rows, err := db.QueryContext(ctx, sql, "2020-01-01") // *sqlx.Rows
+for rows.Next() {
+	results := map[string]interface{}
+	err := rows.MapScan(results)
+	if err != nil {
+		log.Fatal(err)
+    }
+	
+	// обрабатываем result
+}
+```
+
+Можно сканировать результаты в структуру:
+```go
+type Event struct {
+	Id int64
+	Title string
+	Description string `db:"descr"`
+}
+sql := "select * from events where start_date > $1"
+rows, err := db.QueryContext(ctx, sql, "2020-01-01") // *sqlx.Rows
+events := make([]Event)
+for rows.Next() {
+	var event Event
+    err := rows.SctructScan(&event)
+    if err != nil {
+        log.Fatal(err)
+    }
+	events = append(events, event)
+}
+
+```
+
+## Squirrel - fluent SQL generator for Go
+```shell
+go get github.com/Masterminds/squirrel
+```
+
+```go
+import sq "github.com/Masterminds/squirrel"
+
+sql, args, err := sq.
+    Insert("users").Columns("name", "age").
+	Values("moe", 13).Values("larry", sq.Expr("? + 5", 12)).
+	ToSql()
+
+sql == "INSERT INTO users(name, age) VALUES(?,?),(?,? + 5)"
+```
+
+```go
+query := sq.Insert(tableName).
+	Columns("description").
+	Values(task.Description).
+	Suffix(`RETURNING "id"`).
+    RunWith(r.db).
+	PlaceholderFormat(dq.Dollar)
+
+query.QueryRowContext(ctx).Scan(&task.Id)
+```
+
+```go
+query := sq.Update(tableName).
+	SetMap(map[string]interface{} {
+	    "id": task.Description
+    }).
+	Where(sq.Eq{"id": task.Id}).
+	RunWith(r.db).
+	PlaceholderFormat(sq.Dollar)
+
+_, err := query.ExecContext(ctx)
+return err
+```
+
+## Тестирование
+https://github.com/DATA-DOG/go-txdb - Single transaction based sql.Driver for GO
+Позволяет писать изолированные тесты.
+```go
+func init() {
+	txdb.Register("txdb", "mysql", "root@/txdb_test")
+}
+
+func main() {
+	db, err := sql.Open("txdb", "identifier")
+	if err != nil {
+	    log.Fatal(err)	
+    }
+	
+	defer db.Close()
+	if _, err := db.EXEC(`INSERT INTO users(username) VALUES("gopher")`); err != nil {
+	    log.Fatal(err)
+	}
+}
+```
+
+## Моки
+https://github.com/DATA-DOG/go-sqlmock
+```go
+func TestShouldUpdateStats(t *testing.T) {
+    db, mock, err := sqlmock.New()
+    if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+    }
+    defer db.Close()
+    
+    mock.ExpectBegin()
+    mock.ExpectExec("UPDATE products").WillReturnResult(sqlmock.NewResult(1, 1))
+    mock.ExpectExec("INSERT INTO product_viewers").WithArgs(2, 3).WillReturnResult(sqlmock.NewResult(1, 1))
+    mock.ExpectCommit()
+    
+    // now we execute our method
+    if err = recordStats(db, 2, 3); err != nil {
+        t.Errorf("error was not expected while updating stats: %s", err)
+    }
+    
+    // we make sure that all expectations were met
+    if err := mock.ExpectationsWereMet(); err != nil {
+        t.Errorf("there were unfulfilled expectations: %s", err)
+    }
+}
+```
+
+## EXPLAIN
+```postgresql
+EXPLAIN (analyze, verbose, costs, buffers, format json)
+    SELECT * from products
+```
+https://explain.dalibo.com/ - Хороший визуализатор для explain
+
+## Useful links
+- Go database/sql tutorial - http://go-database-sql.org/
+- Типы индексов - https://postgrespro.ru/docs/postgresql/14/indexes-types
+- Зачем обновлять PostgreSQL - https://why-upgrade.depesz.com/show?from=14.4&to=14.5
+- Row-Level локи в Postgresql - https://habr.com/ru/company/ozontech/blog/555358/
+- Топ ошибок при работе с PostgreSQL - https://www.youtube.com/watch?v=HjLnY0aPQZo
